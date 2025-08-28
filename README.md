@@ -1,6 +1,6 @@
 # 🤖 AI Code Interpreter
 
-An intelligent FastAPI web application that executes Python code and analyzes CSV data through natural language conversations. Built with modern async architecture and features a smart router agent that automatically selects between Python execution and data analysis tools.
+A FastAPI web application that executes Python code and analyzes CSV data through natural language conversations. Features a smart router agent that automatically selects between Python execution and data analysis tools.
 
 ## Features
 
@@ -9,11 +9,12 @@ An intelligent FastAPI web application that executes Python code and analyzes CS
 * **CSV Data Analysis** - Upload CSV files and query them using pandas through create_csv_agent
 * **Conversation Memory** - Dual memory system maintains context in both AI agent and web interface
 * **Modern FastAPI Backend** - Web API with Pydantic validation and automatic API documentation
-* **File Management** - Secure CSV upload, removal, and automatic cleanup on exit
 
 ## Try it Live
 
 **https://huggingface.co/spaces/uygaraydin/code-interpreter**
+
+*Deployed on Hugging Face Spaces for cloud accessibility*
 
 *"Write a function to calculate prime numbers up to 100"* → Python code execution  
 *"What's the correlation between columns in my CSV?"* → Data analysis results
@@ -57,7 +58,7 @@ Then open your browser and go to `http://localhost:8000`
 
 ## How It Works
 
-Router agent analyzes queries and selects appropriate tools. Uses LangChain for AI orchestration and FastAPI for modern async web architecture.
+Router agent analyzes queries and selects appropriate tools. Uses LangChain for AI orchestration and FastAPI for web API functionality.
 
 ## Project Structure
 
