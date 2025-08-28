@@ -8,7 +8,7 @@ An intelligent FastAPI web application that executes Python code and analyzes CS
 * **Python Code Execution** - Write and run Python code through PythonREPLTool for math, algorithms, and programming
 * **CSV Data Analysis** - Upload CSV files and query them using pandas through create_csv_agent
 * **Conversation Memory** - Dual memory system maintains context in both AI agent and web interface
-* **Modern FastAPI Backend** - Async architecture with automatic API documentation and type validation
+* **Modern FastAPI Backend** - Web API with Pydantic validation and automatic API documentation
 * **File Management** - Secure CSV upload, removal, and automatic cleanup on exit
 
 ## Try it Live
