@@ -1,0 +1,28 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+langchain = "*"
+python-dotenv = "*"
+black = "*"
+langchainhub = "*"
+langchain-openai = "*"
+langchain-experimental = "*"
+qrcode = "*"
+pillow = "*"
+pandas = "*"
+tabulate = "*"
+fastapi = "*"
+uvicorn = "*"
+jinja2 = "*"
+python-multipart = "*"
+itsdangerous = "*"
+langchain-groq = "*"
+langchain-ollama = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"

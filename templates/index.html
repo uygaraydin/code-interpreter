@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="UTF-8">
+   <title>Code Interpreter</title>
+   <style>
+       body { font-family: Arial; margin: 0; padding: 20px; background: #f5f5f5; }
+       .chat-container { max-width: 800px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+       .chat-header { background: #007bff; color: white; padding: 20px; text-align: center; }
+       
+       .csv-upload { background: #f8f9fa; padding: 20px; border-bottom: 1px solid #ddd; }
+       .upload-container { display: flex; gap: 15px; align-items: center; }
+       .upload-label { 
+           display: flex; align-items: center; gap: 8px; padding: 12px 20px; 
+           background: white; border: 2px dashed #6c757d; border-radius: 8px; 
+           cursor: pointer; transition: all 0.3s; min-width: 200px;
+       }
+       .upload-label:hover { border-color: #007bff; background: #e3f2fd; }
+       .upload-icon { font-size: 18px; }
+       .upload-text { font-weight: 500; color: #495057; }
+       .upload-button { 
+           background: #28a745; color: white; border: none; padding: 12px 24px; 
+           border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.3s;
+       }
+       .upload-button:hover { background: #218838; transform: translateY(-1px); }
+       .upload-button:disabled { background: #6c757d; cursor: not-allowed; transform: none; }
+       .csv-status { background: #d4edda; color: #155724; padding: 12px; margin-top: 15px; border-radius: 6px; border-left: 4px solid #28a745; }
+       .csv-error { background: #f8d7da; color: #721c24; padding: 12px; margin-top: 15px; border-radius: 6px; border-left: 4px solid #dc3545; }
+       .csv-removed { background: #fff3cd; color: #856404; padding: 12px; margin-top: 15px; border-radius: 6px; border-left: 4px solid #ffc107; }
+       
+       .current-csv-info { padding: 12px 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
+       .csv-info-row { display: flex; justify-content: space-between; align-items: center; }
+       .csv-indicator { padding: 8px 15px; border-radius: 20px; font-size: 14px; font-weight: 500; }
+       .csv-indicator.active { background: #d4edda; color: #155724; }
+       .csv-indicator.inactive { background: #fff3cd; color: #856404; }
+       .remove-button { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+       .remove-button:hover { background: #c82333; }
+       
+       .chat-messages { height: 400px; overflow-y: auto; padding: 20px; background: #fafafa; }
+       .message { margin-bottom: 15px; }
+       .user-message { text-align: right; }
+       .bot-message { text-align: left; }
+       .message-content { display: inline-block; padding: 12px 18px; border-radius: 18px; max-width: 70%; word-wrap: break-word; }
+       .user-message .message-content { background: #007bff; color: white; }
+       .bot-message .message-content { background: #e9ecef; color: #333; }
+       .code-result { background: #f8f9fa; border-left: 4px solid #007bff; padding: 12px; margin: 8px 0; font-family: 'Courier New', monospace; white-space: pre-wrap; border-radius: 4px; }
+       
+       .chat-input { display: flex; padding: 20px; background: white; border-top: 1px solid #ddd; gap: 12px; }
+       .chat-input textarea { 
+           flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 20px; 
+           resize: none; font-family: Arial; outline: none; transition: border-color 0.3s;
+       }
+       .chat-input textarea:focus { border-color: #007bff; }
+       .chat-input button { 
+           padding: 12px 24px; background: #007bff; color: white; border: none; 
+           border-radius: 20px; cursor: pointer; font-weight: 500; transition: all 0.3s;
+       }
+       .chat-input button:hover { background: #0056b3; transform: translateY(-1px); }
+       .chat-input button:disabled { background: #6c757d; cursor: not-allowed; transform: none; }
+       
+       .welcome-message { 
+           background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; 
+           margin-bottom: 20px; border-radius: 4px; color: #1565c0; 
+       }
+       
+       .typing-indicator {
+           display: none; padding: 10px; text-align: center; color: #666; font-style: italic;
+       }
+   </style>
+</head>
+<body>
+   <div class="chat-container">
+       <div class="chat-header">
+           <h2>Code Interpreter</h2>
+       </div>
+       
+       <div class="csv-upload">
+           <div class="upload-container">
+               <label for="csv-file" class="upload-label">
+                   <span class="upload-icon">📁</span>
+                   <span class="upload-text" id="upload-text">CSV Dosyası Seç</span>
+                   <input type="file" id="csv-file" name="file" accept=".csv" required style="display: none;">
+               </label>
+               <button type="button" onclick="uploadCSV()" class="upload-button" id="upload-btn" disabled>Yükle</button>
+           </div>
+           <div id="upload-messages"></div>
+       </div>
+       
+       <div class="current-csv-info">
+           <div id="csv-status-container">
+               {% if current_csv %}
+               <div class="csv-info-row">
+                   <div class="csv-indicator active">
+                       Aktif CSV: {{ current_csv }}
+                   </div>
+                   <button type="button" onclick="removeCSV()" class="remove-button">Kaldır</button>
+               </div>
+               {% else %}
+               <div class="csv-indicator inactive">
+                   Hiç CSV yüklenmedi
+               </div>
+               {% endif %}
+           </div>
+       </div>
+       
+       <div class="chat-messages">
+           {% if messages %}
+               {% for message in messages %}
+               <div class="message user-message">
+                   <div class="message-content">{{ message.user }}</div>
+               </div>
+               <div class="message bot-message">
+                   <div class="message-content">
+                       <div class="code-result">{{ message.bot }}</div>
+                   </div>
+               </div>
+               {% endfor %}
+           {% else %}
+               <div class="welcome-message">
+                   Merhaba! Sorularınızı Python kodu yazarak çözebilirim veya CSV verilerinizi pandas ile analiz edebilirim. Hangi konuda yardım istiyorsunuz?
+               </div>
+           {% endif %}
+       </div>
+       
+       <div class="typing-indicator" id="typing-indicator">
+           Agent düşünüyor...
+       </div>
+       
+       <div class="chat-input">
+           <textarea id="message-input" placeholder="Sorunuzu buraya yazın..." rows="1"></textarea>
+           <button type="button" onclick="sendMessage()" id="send-btn">Gönder</button>
+       </div>
+   </div>
+   
+   <script>
+       // File upload functionality
+       document.getElementById('csv-file').addEventListener('change', function() {
+           const uploadBtn = document.getElementById('upload-btn');
+           const uploadText = document.getElementById('upload-text');
+           
+           if (this.files.length > 0) {
+               uploadBtn.disabled = false;
+               uploadText.textContent = this.files[0].name;
+           } else {
+               uploadBtn.disabled = true;
+               uploadText.textContent = 'CSV Dosyası Seç';
+           }
+       });
+
+       // CSV upload functionality
+       async function uploadCSV() {
+           const fileInput = document.getElementById('csv-file');
+           const uploadBtn = document.getElementById('upload-btn');
+           
+           if (!fileInput.files[0]) return;
+           
+           const formData = new FormData();
+           formData.append('file', fileInput.files[0]);
+           
+           uploadBtn.disabled = true;
+           uploadBtn.textContent = 'Yükleniyor...';
+           
+           try {
+               const response = await fetch('/upload-csv', {
+                   method: 'POST',
+                   body: formData
+               });
+               
+               if (response.ok) {
+                   // CSV status'unu güncelle
+                   document.getElementById('csv-status-container').innerHTML = `
+                       <div class="csv-info-row">
+                           <div class="csv-indicator active">
+                               Aktif CSV: ${fileInput.files[0].name}
+                           </div>
+                           <button type="button" onclick="removeCSV()" class="remove-button">Kaldır</button>
+                       </div>
+                   `;
+                   
+                   showMessage('CSV dosyası başarıyla yüklendi', 'success');
+               } else {
+                   showMessage('CSV yükleme hatası', 'error');
+               }
+           } catch (error) {
+               showMessage('CSV yükleme hatası', 'error');
+           } finally {
+               uploadBtn.disabled = false;
+               uploadBtn.textContent = 'Yükle';
+               fileInput.value = '';
+               document.getElementById('upload-text').textContent = 'CSV Dosyası Seç';
+           }
+       }
+
+       // CSV remove functionality
+       async function removeCSV() {
+           try {
+               const response = await fetch('/remove-csv', {
+                   method: 'POST'
+               });
+               
+               if (response.ok) {
+                   // CSV indicator'ü güncelle
+                   document.getElementById('csv-status-container').innerHTML = `
+                       <div class="csv-indicator inactive">
+                           Hiç CSV yüklenmedi
+                       </div>
+                   `;
+                   
+                   // Tüm upload mesajlarını temizle
+                   const uploadMessages = document.querySelectorAll('.csv-status, .csv-error, .csv-removed');
+                   uploadMessages.forEach(msg => msg.remove());
+                   
+                   // Başarı mesajı göster
+                   showMessage('CSV dosyası kaldırıldı', 'success');
+               }
+           } catch (error) {
+               console.error('CSV kaldırma hatası:', error);
+               showMessage('CSV kaldırma hatası', 'error');
+           }
+       }
+
+       // Chat functionality
+       async function sendMessage() {
+           const input = document.getElementById('message-input');
+           const sendBtn = document.getElementById('send-btn');
+           const typingIndicator = document.getElementById('typing-indicator');
+           
+           if (!input.value.trim()) return;
+           
+           const userMessage = input.value;
+           input.value = '';
+           sendBtn.disabled = true;
+           sendBtn.textContent = 'Gönderiliyor...';
+           
+           // Add user message
+           addMessage(userMessage, 'user');
+           
+           // Show typing indicator
+           typingIndicator.style.display = 'block';
+           
+           try {
+               const response = await fetch('/query', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ input: userMessage })
+               });
+               
+               if (!response.ok) {
+                   throw new Error('Network response was not ok');
+               }
+               
+               const data = await response.json();
+               addMessage(data.output, 'bot');
+               
+           } catch (error) {
+               addMessage('Bir hata oluştu: ' + error.message, 'bot');
+           } finally {
+               sendBtn.disabled = false;
+               sendBtn.textContent = 'Gönder';
+               typingIndicator.style.display = 'none';
+           }
+       }
+
+       function addMessage(content, type) {
+           const messagesDiv = document.querySelector('.chat-messages');
+           const messageDiv = document.createElement('div');
+           messageDiv.className = `message ${type}-message`;
+           
+           if (type === 'user') {
+               messageDiv.innerHTML = `<div class="message-content">${escapeHtml(content)}</div>`;
+           } else {
+               messageDiv.innerHTML = `<div class="message-content"><div class="code-result">${escapeHtml(content)}</div></div>`;
+           }
+           
+           messagesDiv.appendChild(messageDiv);
+           messagesDiv.scrollTop = messagesDiv.scrollHeight;
+           
+           // Hide welcome message if exists
+           const welcomeMessage = messagesDiv.querySelector('.welcome-message');
+           if (welcomeMessage) {
+               welcomeMessage.style.display = 'none';
+           }
+       }
+
+       function showMessage(text, type) {
+           const container = document.getElementById('upload-messages');
+           const messageDiv = document.createElement('div');
+           messageDiv.className = type === 'success' ? 'csv-status' : 'csv-error';
+           messageDiv.textContent = text;
+           container.appendChild(messageDiv);
+           
+           // Remove message after 3 seconds
+           setTimeout(() => {
+               messageDiv.remove();
+           }, 3000);
+       }
+
+       function escapeHtml(text) {
+           const div = document.createElement('div');
+           div.textContent = text;
+           return div.innerHTML;
+       }
+
+       // Enter key to send message
+       document.getElementById('message-input').addEventListener('keypress', function(e) {
+           if (e.key === 'Enter' && !e.shiftKey) {
+               e.preventDefault();
+               sendMessage();
+           }
+       });
+   </script>
+</body>
+</html>
